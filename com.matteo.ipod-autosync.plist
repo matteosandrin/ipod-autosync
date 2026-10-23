@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.matteo.ipod-autosync</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/matteo/bin/ipod-autosync.sh</string>
+	</array>
+	<key>StartInterval</key>
+	<integer>20</integer>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/Users/matteo/Library/Logs/ipod-autosync.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/matteo/Library/Logs/ipod-autosync.err.log</string>
+</dict>
+</plist>
