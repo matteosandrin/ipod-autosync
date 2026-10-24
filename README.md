@@ -47,7 +47,9 @@ waits up to 120s for the iPod to show in iTunes.
 
 - iTunes holds `iPod_Control/iTunes/iTunesLock` while it writes to the
   iPod, and rewrites `iTunesDB` at the end of a sync. The sync is done
-  when the lock is gone and `iTunesDB` is newer than the `update` call.
+  when the lock is gone and the `iTunesDB` mtime is later than it was
+  just before the `update` call. The script does not compare with the
+  clock, because a short sync can finish in the same second.
   The script polls these files every second, because iTunes does not
   reply to Apple events during a sync.
 - If the lock stays released for `idleLimit` seconds (30) without a new

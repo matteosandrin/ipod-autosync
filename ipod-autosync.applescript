@@ -1,6 +1,6 @@
 -- Detect an iPod in iTunes, sync it, wait for sync completion, eject.
 -- iTunes holds iPod_Control/iTunes/iTunesLock while it writes to the iPod.
--- The sync is done when the lock is gone and iTunesDB is newer than the sync start.
+-- The sync is done when the lock is gone and iTunesDB changed after the update call.
 
 -- Return the name of the iPod source, or "" if iTunes does not show one (or is
 -- still loading and does not reply).
@@ -19,7 +19,7 @@ on findIpod()
 	return ""
 end findIpod
 
--- Return "gone", "locked", "synced" (iTunesDB written after t0) or "idle".
+-- Return "gone", "locked", "synced" (iTunesDB mtime later than t0) or "idle".
 -- Use the filesystem, because iTunes does not reply to Apple events during a sync.
 on ipodState(dir, t0)
 	return do shell script "d=" & quoted form of dir & "
@@ -87,7 +87,9 @@ on error errMsg
 	logLine("podcast artwork failed: " & errMsg)
 end try
 
-set t0 to do shell script "date +%s"
+-- Use the iTunesDB mtime from before the update, not the clock. A short sync
+-- can write iTunesDB in the same second as the update call.
+set t0 to do shell script "stat -f %m " & quoted form of (itunesDir & "/iTunesDB") & " 2>/dev/null || echo 0"
 logLine("sending update")
 tell application "iTunes" to update (first source whose name is srcName)
 logLine("update returned")
