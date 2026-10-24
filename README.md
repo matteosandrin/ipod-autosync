@@ -8,10 +8,11 @@ Targets macOS Mojave (10.14) with iTunes 12.
 - `ipod-autosync.applescript` — finds an iPod source in iTunes, triggers
   `update`, waits for the sync to finish on the iPod filesystem, then
   `eject`.
-- `ipod-autosync.sh` — launchd entry point. Takes a lock so overlapping
-  ticks do not stack. Skips when iTunes is not already running.
-- `com.matteo.ipod-autosync.plist` — launchd agent, polls every 20s and
-  runs at login.
+- `ipod-autosync.sh` — launchd entry point. Exits unless the volume
+  `/Volumes/iPod` is mounted. Takes a lock so overlapping runs do not
+  stack. Skips when iTunes is not already running.
+- `com.matteo.ipod-autosync.plist` — launchd agent, runs on every volume
+  mount (`StartOnMount`) and at login.
 
 ## Install
 
@@ -35,8 +36,11 @@ Privacy → Automation).
 tail -f ~/Library/Logs/ipod-autosync.log
 ```
 
-Plug in the iPod with iTunes running. Expect `found iPod <name>` and
-eventually `ejected`.
+Plug in the iPod with iTunes running. Expect `iPod mounted` and
+eventually `result: ejected <name> (synced after <n>s)`.
+
+If iTunes is not running when the iPod mounts, nothing happens. Open
+iTunes, then eject and re-plug the iPod.
 
 ## Tuning
 

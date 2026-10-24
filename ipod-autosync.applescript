@@ -13,12 +13,6 @@ on findIpod()
 	return ""
 end findIpod
 
--- Return the iPod_Control/iTunes dir of the mounted iPod, or "" if not found.
-on findItunesDir(srcName)
-	set candidate to "/Volumes/" & srcName & "/iPod_Control/iTunes"
-	return do shell script "for d in " & quoted form of candidate & " /Volumes/*/iPod_Control/iTunes; do [ -d \"$d\" ] && { echo \"$d\"; exit 0; }; done; true"
-end findItunesDir
-
 -- Return "gone", "locked", "synced" (iTunesDB written after t0) or "idle".
 -- Use the filesystem, because iTunes does not reply to Apple events during a sync.
 on ipodState(dir, t0)
@@ -29,25 +23,40 @@ m=$(stat -f %m \"$d/iTunesDB\" 2>/dev/null || echo 0)
 [ \"$m\" -gt " & t0 & " ] && echo synced || echo idle"
 end ipodState
 
-set srcName to findIpod()
-if srcName is "" then return "no-ipod"
+-- Append a timestamped line to the agent log, with the iTunesDB mtime.
+on logLine(msg)
+	do shell script "db=$(stat -f %Sm -t %T /Volumes/iPod/iPod_Control/iTunes/iTunesDB 2>/dev/null || echo none)
+echo \"[$(date '+%Y-%m-%d %H:%M:%S')]   \"" & quoted form of msg & "\" (iTunesDB $db)\" >> \"$HOME/Library/Logs/ipod-autosync.log\""
+end logLine
 
-set itunesDir to findItunesDir(srcName)
-if itunesDir is "" then return "no-volume for " & srcName
+set itunesDir to "/Volumes/iPod/iPod_Control/iTunes"
 
-log "ipod-autosync: found iPod " & srcName & " at " & itunesDir
+-- launchd starts us on mount, a few seconds before iTunes shows the iPod.
+set srcName to ""
+repeat 30 times
+	set srcName to findIpod()
+	if srcName is not "" then exit repeat
+	delay 1
+end repeat
+if srcName is "" then return "no-ipod in iTunes"
+logLine("found " & srcName & " in iTunes")
 
 -- iTunes also takes the lock and writes iTunesDB right after connect.
 -- Wait for that to finish, so that it is not mistaken for the end of the sync.
+set connectWait to 0
 repeat 60 times
 	set curState to ipodState(itunesDir, 0)
 	if curState is "gone" then return "source-gone"
 	if curState is not "locked" then exit repeat
 	delay 1
+	set connectWait to connectWait + 1
 end repeat
+logLine("connect lock wait done after " & connectWait & "s, state " & curState)
 
 set t0 to do shell script "date +%s"
+logLine("sending update")
 tell application "iTunes" to update (first source whose name is srcName)
+logLine("update returned")
 
 -- If the lock stays released without a new iTunesDB for this long,
 -- the sync had nothing to write (or did not start).
@@ -55,11 +64,16 @@ set idleLimit to 30
 set maxWaitMinutes to 60
 set idleCount to 0
 set waited to 0
+set lastState to ""
 
 repeat
 	delay 1
 	set waited to waited + 1
 	set curState to ipodState(itunesDir, t0)
+	if curState is not lastState then
+		logLine("state " & curState & " after " & waited & "s")
+		set lastState to curState
+	end if
 	if curState is "gone" then return "source-gone"
 	if curState is "synced" then exit repeat
 	if curState is "locked" then
@@ -73,7 +87,7 @@ end repeat
 
 try
 	tell application "iTunes" to eject (first source whose name is srcName)
-	return "ejected (" & curState & " after " & waited & "s)"
+	return "ejected " & srcName & " (" & curState & " after " & waited & "s)"
 on error errMsg
 	return "eject-failed: " & errMsg
 end try
