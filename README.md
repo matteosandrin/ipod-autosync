@@ -10,7 +10,7 @@ Targets macOS Mojave (10.14) with iTunes 12.
   to finish on the iPod filesystem, then `eject`.
 - `ipod-autosync.sh` — launchd entry point. Exits unless the volume
   `/Volumes/iPod` is mounted. Takes a lock so overlapping runs do not
-  stack. Skips when iTunes is not already running.
+  stack.
 - `com.matteo.ipod-autosync.plist` — launchd agent, runs on every volume
   mount (`StartOnMount`) and at login.
 
@@ -36,16 +36,14 @@ Privacy → Automation).
 tail -f ~/Library/Logs/ipod-autosync.log
 ```
 
-Plug in the iPod with iTunes running. Expect `iPod mounted` and
-eventually `result: ejected <name> (synced after <n>s)`.
+Plug in the iPod. Expect `iPod mounted` and eventually
+`result: ejected <name> (synced after <n>s)`.
 
-If iTunes is not running when the iPod mounts, nothing happens. Open
-iTunes, then eject and re-plug the iPod.
+If iTunes is not running when the iPod mounts, the script opens it and
+waits up to 120s for the iPod to show in iTunes.
 
 ## Tuning
 
-- To let the agent auto-launch iTunes on connect, remove the
-  `pgrep -x iTunes` guard in `ipod-autosync.sh`.
 - iTunes holds `iPod_Control/iTunes/iTunesLock` while it writes to the
   iPod, and rewrites `iTunesDB` at the end of a sync. The sync is done
   when the lock is gone and `iTunesDB` is newer than the `update` call.

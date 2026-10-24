@@ -2,14 +2,20 @@
 -- iTunes holds iPod_Control/iTunes/iTunesLock while it writes to the iPod.
 -- The sync is done when the lock is gone and iTunesDB is newer than the sync start.
 
+-- Return the name of the iPod source, or "" if iTunes does not show one (or is
+-- still loading and does not reply).
 on findIpod()
-	tell application "iTunes"
-		repeat with s in sources
-			try
-				if (kind of s) is iPod then return (name of s) as string
-			end try
-		end repeat
-	end tell
+	try
+		with timeout of 5 seconds
+			tell application "iTunes"
+				repeat with s in sources
+					try
+						if (kind of s) is iPod then return (name of s) as string
+					end try
+				end repeat
+			end tell
+		end timeout
+	end try
 	return ""
 end findIpod
 
@@ -32,8 +38,16 @@ end logLine
 set itunesDir to "/Volumes/iPod/iPod_Control/iTunes"
 
 -- launchd starts us on mount, a few seconds before iTunes shows the iPod.
+-- If iTunes is not open, start it and allow more time for it to load.
+set findLimit to 30
+if application "iTunes" is not running then
+	logLine("starting iTunes")
+	do shell script "open -a iTunes"
+	set findLimit to 120
+end if
+
 set srcName to ""
-repeat 30 times
+repeat findLimit times
 	set srcName to findIpod()
 	if srcName is not "" then exit repeat
 	delay 1

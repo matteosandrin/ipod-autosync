@@ -22,12 +22,6 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 trap 'rmdir "$LOCK"' EXIT
 
-# Only act when iTunes is already running; we do not want to launch it
-# for every mount.
-if ! pgrep -x iTunes >/dev/null; then
-	exit 0
-fi
-
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] iPod mounted"
 result=$(/usr/bin/osascript "$SCRIPT" 2>&1)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] result: $result"
