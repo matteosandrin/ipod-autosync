@@ -5,9 +5,9 @@ Targets macOS Mojave (10.14) with iTunes 12.
 
 ## Files
 
-- `ipod-autosync.applescript` — finds an iPod source in iTunes, triggers
-  `update`, waits for the sync to finish on the iPod filesystem, then
-  `eject`.
+- `ipod-autosync.applescript` — finds an iPod source in iTunes, shows a
+  5s dialog that lets you cancel, triggers `update`, waits for the sync
+  to finish on the iPod filesystem, then `eject`.
 - `ipod-autosync.sh` — launchd entry point. Exits unless the volume
   `/Volumes/iPod` is mounted. Takes a lock so overlapping runs do not
   stack. Skips when iTunes is not already running.

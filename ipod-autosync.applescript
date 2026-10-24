@@ -41,6 +41,15 @@ end repeat
 if srcName is "" then return "no-ipod in iTunes"
 logLine("found " & srcName & " in iTunes")
 
+-- Give the user 5s to cancel. If nobody clicks, the dialog gives up and we continue.
+try
+	activate
+	display dialog "Syncing and ejecting " & srcName & " in 5 seconds." with title "iPod Autosync" buttons {"Cancel", "Sync Now"} default button "Sync Now" cancel button "Cancel" giving up after 5
+on error number -128
+	logLine("cancelled by user")
+	return "cancelled by user"
+end try
+
 -- iTunes also takes the lock and writes iTunesDB right after connect.
 -- Wait for that to finish, so that it is not mistaken for the end of the sync.
 set connectWait to 0
