@@ -6,7 +6,8 @@ Targets macOS Mojave (10.14) with iTunes 12.
 ## Files
 
 - `ipod-autosync.applescript` — finds an iPod source in iTunes, triggers
-  `update`, polls `free space` until it is stable (~60s), then `eject`.
+  `update`, waits for the sync to finish on the iPod filesystem, then
+  `eject`.
 - `ipod-autosync.sh` — launchd entry point. Takes a lock so overlapping
   ticks do not stack. Skips when iTunes is not already running.
 - `com.matteo.ipod-autosync.plist` — launchd agent, polls every 20s and
@@ -41,6 +42,10 @@ eventually `ejected`.
 
 - To let the agent auto-launch iTunes on connect, remove the
   `pgrep -x iTunes` guard in `ipod-autosync.sh`.
-- Sync completion is inferred when free space stops changing for six
-  consecutive 10s polls. Adjust `stableCount` or `delay` in the
-  AppleScript to change sensitivity.
+- iTunes holds `iPod_Control/iTunes/iTunesLock` while it writes to the
+  iPod, and rewrites `iTunesDB` at the end of a sync. The sync is done
+  when the lock is gone and `iTunesDB` is newer than the `update` call.
+  The script polls these files every second, because iTunes does not
+  reply to Apple events during a sync.
+- If the lock stays released for `idleLimit` seconds (30) without a new
+  `iTunesDB`, the sync is treated as a no-op and the iPod is ejected.
