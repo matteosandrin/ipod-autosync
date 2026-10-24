@@ -76,6 +76,17 @@ repeat 60 times
 end repeat
 logLine("connect lock wait done after " & connectWait & "s, state " & curState)
 
+-- Embed missing podcast artwork, so that new episodes sync with artwork.
+-- The fixer tells iTunes to read the new artwork. If it fails, sync anyway.
+logLine("fixing podcast artwork")
+try
+	do shell script "a=\"$HOME/dev/ipod-podcast-artwork\"
+\"$a/.venv/bin/python\" \"$a/fix_artwork.py\" --dir /Volumes/Storage/Music/iTunes/Podcasts >> \"$HOME/Library/Logs/ipod-podcast-artwork.log\" 2>&1"
+	logLine("podcast artwork done")
+on error errMsg
+	logLine("podcast artwork failed: " & errMsg)
+end try
+
 set t0 to do shell script "date +%s"
 logLine("sending update")
 tell application "iTunes" to update (first source whose name is srcName)
